@@ -1,0 +1,5 @@
+# File of Envirornments
+.env
+
+./uploads
+/node_modules

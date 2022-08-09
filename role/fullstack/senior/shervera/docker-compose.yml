@@ -1,0 +1,87 @@
+#Configuration File for MySQL Instance
+version: '3.8'
+
+services:
+  mysql:
+    image: mysql:5.7
+    container_name: mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: '${MYSQL_ROOT_PASSWORD}'
+      MYSQL_DATABASE: '${MYSQL_DATABASE}'
+      MYSQL_USER: '${MYSQL_USER}'
+      MYSQL_PASSWORD: '${MYSQL_PASSWORD}'
+      MYSQL_PORT: '${MYSQL_PORT}'
+    ports:
+      - '${MYSQL_PORT}:3306'
+    restart: always
+    expose:
+      - ${MYSQL_PORT}
+    networks:
+      - directus
+
+  dev:
+    container_name: airportart_api_dev
+    image: airportart-api-dev:1.0.0
+    build:
+      context: ./airportart-api/
+      target: development
+      dockerfile: Dockerfile
+    command: npm run start:debug
+    ports:
+      - '3000:3000'
+    volumes:
+      - ./airportart-api/:/usr/src/app
+      - /usr/src/app/node_modules
+    restart: unless-stopped
+
+  prod:
+    container_name: airportart_api_prod
+    image: airportart-api-prod:1.0.0
+    build:
+      context: ./airportart-api/
+      target: production
+      dockerfile: Dockerfile
+    command: npm run start:prod
+    ports:
+      - 3001:3000
+    volumes:
+      - ./airportart-api/:/usr/src/app
+      - /usr/src/app/node_modules
+    restart: unless-stopped
+
+  cache:
+    container_name: cache
+    image: redis:6
+    networks:
+      - directus
+
+  directus:
+    container_name: directus
+    image: directus/directus:9.0.0
+    ports:
+      - 8055:8055
+    volumes:
+      - ./uploads:/directus/uploads
+    depends_on:
+      - cache
+      - mysql
+    networks:
+      - directus
+    environment:
+      KEY: '${DIRECTUS_KEY}'
+      SECRET: '${DIRECTUS_SECRET}'
+
+      DB_HOST: 'mysql'
+      DB_PORT: '${MYSQL_PORT}'
+      DB_DATABASE: '${MYSQL_DATABASE}'
+      DB_USER: '${MYSQL_USER}'
+      DB_PASSWORD: '${MYSQL_PASSWORD}'
+
+      CACHE_ENABLED: 'true'
+      CACHE_STORE: 'redis'
+      CACHE_REDIS: 'redis://cache:6379'
+
+      ADMIN_EMAIL: '${ADMIN_EMAIL}'
+      ADMIN_PASSWORD: '${ADMIN_PASSWORD}'
+networks:
+  directus:
