@@ -1,0 +1,12 @@
+-- Table airports
+
+CREATE TABLE IF NOT EXISTS airports (
+  id INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+  name VARCHAR(255) NOT NULL,
+  location_id INT NOT NULL UNIQUE KEY,
+  airport_operator_id INT NOT NULL UNIQUE KEY,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT fk_airport_locations FOREIGN KEY (location_id) REFERENCES locations (id) ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT fk_airport_operators FOREIGN KEY (airport_operator_id) REFERENCES airport_operators (id) ON DELETE CASCADE ON UPDATE CASCADE
+);

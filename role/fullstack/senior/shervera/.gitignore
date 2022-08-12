@@ -1,5 +1,15 @@
 # File of Envirornments
 .env
 
-./uploads
+#Folder of mysql database
+/db/mysql
+
+#Database root user credentials file
+/db/*.sql
+
+#Folder of directus uploads
+/directus/uploads
+/uploads
+
+#Folder of dependencies
 /node_modules

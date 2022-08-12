@@ -12,7 +12,7 @@ RUN npm install --only=development
 
 COPY . .
 
-RUN npm run build
+RUN npm run start:dev
 
 # BUILD FOR PRODUCTION
 

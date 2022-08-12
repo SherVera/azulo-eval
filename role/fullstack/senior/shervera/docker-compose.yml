@@ -3,7 +3,7 @@ version: '3.8'
 
 services:
   mysql:
-    image: mysql:5.7
+    image: mysql:latest
     container_name: mysql
     environment:
       MYSQL_ROOT_PASSWORD: '${MYSQL_ROOT_PASSWORD}'
@@ -13,13 +13,28 @@ services:
       MYSQL_PORT: '${MYSQL_PORT}'
     ports:
       - '${MYSQL_PORT}:3306'
-    restart: always
     expose:
       - ${MYSQL_PORT}
+    volumes:
+      - ./db/mysql:/var/lib/mysql
+      - ./db:/docker-entrypoint-initdb.d
     networks:
-      - directus
-
-  dev:
+      - azulo
+  flyway:
+    image: flyway/flyway:8.0.1
+    container_name: flyway
+    command: -url=jdbc:mysql://mysql -schemas=${MYSQL_DATABASE} -user=root -password=${MYSQL_ROOT_PASSWORD} -connectRetries=180 migrate
+    environment:
+      MYSQL_ROOT_PASSWORD: '${MYSQL_ROOT_PASSWORD}'
+      MYSQL_DATABASE: '${MYSQL_DATABASE}'
+    depends_on:
+      mysql:
+        condition: service_started
+    volumes:
+      - ./db/flyway/migrations:/flyway/sql
+    networks:
+      - azulo
+  api-dev:
     container_name: airportart_api_dev
     image: airportart-api-dev:1.0.0
     build:
@@ -32,9 +47,8 @@ services:
     volumes:
       - ./airportart-api/:/usr/src/app
       - /usr/src/app/node_modules
-    restart: unless-stopped
 
-  prod:
+  api-prod:
     container_name: airportart_api_prod
     image: airportart-api-prod:1.0.0
     build:
@@ -47,13 +61,12 @@ services:
     volumes:
       - ./airportart-api/:/usr/src/app
       - /usr/src/app/node_modules
-    restart: unless-stopped
 
   cache:
     container_name: cache
     image: redis:6
     networks:
-      - directus
+      - azulo
 
   directus:
     container_name: directus
@@ -63,10 +76,13 @@ services:
     volumes:
       - ./uploads:/directus/uploads
     depends_on:
-      - cache
-      - mysql
+      mysql:
+        condition: service_started
+      cache:
+        condition: service_started
+    restart: on-failure:10
     networks:
-      - directus
+      - azulo
     environment:
       KEY: '${DIRECTUS_KEY}'
       SECRET: '${DIRECTUS_SECRET}'
@@ -83,5 +99,10 @@ services:
 
       ADMIN_EMAIL: '${ADMIN_EMAIL}'
       ADMIN_PASSWORD: '${ADMIN_PASSWORD}'
+
+      CORS_METHODS: 'GET,POST,PATCH,DELETE'
+      CORS_ORIGIN: 'true'
+      CORS_ENABLED: 'true'
 networks:
-  directus:
+  azulo:
+    driver: bridge
